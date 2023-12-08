@@ -30,6 +30,29 @@ impl InputRole {
     pub const Whole: Self = Self::_EndOfVariants;
 }
 
+use std::collections::BTreeMap;
+pub struct InputRoleMap<T> {
+    pub input_map: BTreeMap<T, (bool, Vec<InputRole>)>,
+}
+
+impl<T: Ord + Copy> InputRoleMap<T> {
+    pub fn new() -> Self {
+        Self {
+            input_map: BTreeMap::new()
+        }
+    }
+
+    pub fn assign(&mut self, set_list: &[(T, InputRole)]) {
+        for key_set in set_list {
+            if let Some((_, role_list)) = self.input_map.get_mut(&key_set.0) {
+                role_list.push(key_set.1);
+            } else {
+                self.input_map.insert(key_set.0, (false, vec![key_set.1]));
+            }
+        }
+    }
+}
+
 #[derive(Default, Debug, Clone, Copy)]
 pub struct InputRoleState {
     state_and_history: [(bool, u32); InputRole::_EndOfVariants as usize],
@@ -37,6 +60,10 @@ pub struct InputRoleState {
 
 #[allow(dead_code)]
 impl InputRoleState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn clear_all(&mut self) {
         for s_and_h in &mut self.state_and_history {
             *s_and_h = (false, 0);
@@ -49,6 +76,16 @@ impl InputRoleState {
         }
     }
 
+    pub fn update_state<T: Ord>(&mut self, map: &InputRoleMap<T>) {
+        for (_, (state, list)) in map.input_map.iter() {
+            if *state {
+                for r in list {
+                    self.set_true(*r);
+                }
+            }
+        }
+
+    }
     pub fn clear_history(&mut self) {
         for s_and_h in &mut self.state_and_history {
             s_and_h.1 = 0;

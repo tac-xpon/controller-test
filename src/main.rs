@@ -20,8 +20,6 @@ use bgsp_lib2::{
 
 use piston_window::{Key, ControllerButton, ControllerHat, HatState};
 
-use std::collections::BTreeMap;
-
 const FULL_SCREEN: bool = false;
 const VM_RECT_SIZE: (i32, i32) = (32, 32);
 const VM_RECT_PIXEL_SIZE: (i32, i32) = (VM_RECT_SIZE.0 * PATTERN_SIZE as i32, VM_RECT_SIZE.1 * PATTERN_SIZE as i32);
@@ -45,7 +43,7 @@ fn main() {
         WINDOW_MARGIN,
     );
 
-    let mut keyboard_map: BTreeMap<Key, (bool, Vec<_>)> = BTreeMap::new();
+    let mut keyboard_map = InputRoleMap::<Key>::new();
     {
         let set_list = [
             (Key::D1,    InputRole::Button0),
@@ -68,15 +66,9 @@ fn main() {
             (Key::Down,  InputRole::Down),
             (Key::Left,  InputRole::Left),
         ];
-        for key_set in set_list {
-            if let Some((_, role_list)) = keyboard_map.get_mut(&key_set.0) {
-                role_list.push(key_set.1);
-            } else {
-                keyboard_map.insert(key_set.0, (false, vec![key_set.1]));
-            }
-        }
+        keyboard_map.assign(&set_list);
     }
-    let mut button_map: BTreeMap<ControllerButton, (bool, Vec<_>)> = BTreeMap::new();
+    let mut button_map = InputRoleMap::<ControllerButton>::new();
     {
         let set_list = [
             (ControllerButton {id: 0, button: 0}, InputRole::Left),
@@ -84,15 +76,9 @@ fn main() {
             (ControllerButton {id: 0, button: 2}, InputRole::Right),
             (ControllerButton {id: 0, button: 3}, InputRole::Up),
         ];
-        for button_set in set_list {
-            if let Some((_, role_list)) = button_map.get_mut(&button_set.0) {
-                role_list.push(button_set.1);
-            } else {
-                button_map.insert(button_set.0, (false, vec![button_set.1]));
-            }
-        }
+        button_map.assign(&set_list);
     }
-    let mut hat_map: BTreeMap<ControllerHat, (bool, Vec<_>)> = BTreeMap::new();
+    let mut hat_map = InputRoleMap::<ControllerHat>::new();
     {
         let set_list = [
             (ControllerHat {id: 0, which: 0, state: HatState::Up}, InputRole::Up),
@@ -108,15 +94,9 @@ fn main() {
             (ControllerHat {id: 0, which: 0, state: HatState::LeftDown}, InputRole::Left),
             (ControllerHat {id: 0, which: 0, state: HatState::LeftDown}, InputRole::Down),
         ];
-        for hat_set in set_list {
-            if let Some((_, role_list)) = hat_map.get_mut(&hat_set.0) {
-                role_list.push(hat_set.1);
-            } else {
-                hat_map.insert(hat_set.0, (false, vec![hat_set.1]));
-            }
-        }
+        hat_map.assign(&set_list);
     }
-    let mut input_role_state = InputRoleState::default();
+    let mut input_role_state = InputRoleState::new();
 
     let mut bg_texture_bank = BgTextureBank::new(
         &bgchar_data::BG_PATTERN_TBL,
@@ -209,27 +189,9 @@ fn main() {
             break 'main_loop;
         }
         input_role_state.clear_state();
-        for (_, (state, list)) in keyboard_map.iter() {
-            if *state {
-                for r in list {
-                    input_role_state.set_true(*r);
-                }
-            }
-        }
-        for (_, (state, list)) in button_map.iter() {
-            if *state {
-                for r in list {
-                    input_role_state.set_true(*r);
-                }
-            }
-        }
-        for (_, (state, list)) in hat_map.iter() {
-            if *state {
-                for r in list {
-                    input_role_state.set_true(*r);
-                }
-            }
-        }
+        input_role_state.update_state(&keyboard_map);
+        input_role_state.update_state(&button_map);
+        input_role_state.update_state(&hat_map);
         input_role_state.update_history();
         t_count += 1;
     }

@@ -8,15 +8,14 @@ use bgsp_lib2::{
     sp_resources::*
 };
 use piston_window::*;
-use std::collections::BTreeMap;
 
 pub fn doing(
     game_window: &mut GameWindow,
     spr: &mut SpResources,
     bg: &mut (BgPlane, BgPlane),
-    keyboard_map: &mut BTreeMap<Key, (bool, Vec<InputRole>)>,
-    button_map: &mut BTreeMap<ControllerButton, (bool, Vec<InputRole>)>,
-    hat_map: &mut BTreeMap<ControllerHat, (bool, Vec<InputRole>)>,
+    keyboard_map: &mut InputRoleMap<Key>,
+    button_map: &mut InputRoleMap<ControllerButton>,
+    hat_map: &mut InputRoleMap<ControllerHat>,
     controller_axis_args: &mut Vec<ControllerAxisArgs>,
 ) -> bool {
     controller_axis_args.clear();
@@ -46,17 +45,17 @@ pub fn doing(
             println!("{:?}", input);
             match input.button {
                 Button::Keyboard(k) => {
-                    if let Some((state, _)) = keyboard_map.get_mut(&k) {
+                    if let Some((state, _)) = keyboard_map.input_map.get_mut(&k) {
                         *state = input.state == ButtonState::Press;
                     }
                 }
                 Button::Controller(b) => {
-                    if let Some((state, _)) = button_map.get_mut(&b) {
+                    if let Some((state, _)) = button_map.input_map.get_mut(&b) {
                         *state = input.state == ButtonState::Press;
                     }
                 }
                 Button::Hat(h) => {
-                    for (m, (state, _)) in hat_map.iter_mut() {
+                    for (m, (state, _)) in hat_map.input_map.iter_mut() {
                         if m.id == h.id && m.which == h.which {
                             *state = m.state == h.state;
                         }
