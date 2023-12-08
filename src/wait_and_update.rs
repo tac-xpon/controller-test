@@ -14,9 +14,12 @@ pub fn doing(
     game_window: &mut GameWindow,
     spr: &mut SpResources,
     bg: &mut (BgPlane, BgPlane),
-    keyboard_map: &BTreeMap<piston_window::Key, Vec<InputRole>>,
-    input_role_state: &mut InputRoleState,
+    keyboard_map: &mut BTreeMap<Key, (bool, Vec<InputRole>)>,
+    button_map: &mut BTreeMap<ControllerButton, (bool, Vec<InputRole>)>,
+    hat_map: &mut BTreeMap<ControllerHat, (bool, Vec<InputRole>)>,
+    controller_axis_args: &mut Vec<ControllerAxisArgs>,
 ) -> bool {
+    controller_axis_args.clear();
     let mut texture_context = game_window.mut_window().create_texture_context();
     let texture_settings = TextureSettings::new();
     bg.0.rendering();
@@ -39,18 +42,33 @@ pub fn doing(
     ).unwrap();
 
     while let Some(event) = game_window.mut_window().next() {
-        if let Some(Button::Keyboard(k)) = event.press_args() {
-            if let Some(role_list) = keyboard_map.get(&k) {
-                for role in role_list { input_role_state.set_true(*role); }
+        if let Some(input) = event.button_args() {
+            println!("{:?}", input);
+            match input.button {
+                Button::Keyboard(k) => {
+                    if let Some((state, _)) = keyboard_map.get_mut(&k) {
+                        *state = input.state == ButtonState::Press;
+                    }
+                }
+                Button::Controller(b) => {
+                    if let Some((state, _)) = button_map.get_mut(&b) {
+                        *state = input.state == ButtonState::Press;
+                    }
+                }
+                Button::Hat(h) => {
+                    for (m, (state, _)) in hat_map.iter_mut() {
+                        if m.id == h.id && m.which == h.which {
+                            *state = m.state == h.state;
+                        }
+                    }
+                }
+                _ => {}
             }
         }
-        if let Some(Button::Keyboard(k)) = event.release_args() {
-            if let Some(role_list) = keyboard_map.get(&k) {
-                for role in role_list { input_role_state.set_false(*role); }
-            }
+        if let Some(axis_args) = event.controller_axis_args() {
+            controller_axis_args.push(axis_args);
         }
         if let Event::Loop(Loop::Render(_)) = event {
-            input_role_state.update_history();
             let vm_rect_size = game_window.vm_rect_size();
             let window_size = game_window.window().size();
             let rotation = game_window.rotation();

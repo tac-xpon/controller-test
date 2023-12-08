@@ -18,6 +18,8 @@ use bgsp_lib2::{
     sp_resources::*,
 };
 
+use piston_window::{Key, ControllerButton, ControllerHat, HatState};
+
 use std::collections::BTreeMap;
 
 const FULL_SCREEN: bool = false;
@@ -43,34 +45,74 @@ fn main() {
         WINDOW_MARGIN,
     );
 
-    let mut keyboard_map: BTreeMap<piston_window::Key, Vec<_>> = BTreeMap::new();
+    let mut keyboard_map: BTreeMap<Key, (bool, Vec<_>)> = BTreeMap::new();
     {
-        let key_set_list = [
-            (piston_window::Key::D1,    InputRole::Button0),
-            (piston_window::Key::D2,    InputRole::Button1),
-            (piston_window::Key::D3,    InputRole::Button2),
-            (piston_window::Key::D4,    InputRole::Button3),
-            (piston_window::Key::Z,     InputRole::Button4),
-            (piston_window::Key::X,     InputRole::Button5),
-            (piston_window::Key::C,     InputRole::Button6),
-            (piston_window::Key::Space, InputRole::Button7),
-            (piston_window::Key::Space, InputRole::Button4),
-            (piston_window::Key::W,     InputRole::Up),
-            (piston_window::Key::D,     InputRole::Right),
-            (piston_window::Key::S,     InputRole::Down),
-            (piston_window::Key::A,     InputRole::Left),
-            (piston_window::Key::E,     InputRole::Up),
-            (piston_window::Key::E,     InputRole::Right),
-            (piston_window::Key::Up,    InputRole::Up2),
-            (piston_window::Key::Right, InputRole::Right2),
-            (piston_window::Key::Down,  InputRole::Down2),
-            (piston_window::Key::Left,  InputRole::Left2),
+        let set_list = [
+            (Key::D1,    InputRole::Button0),
+            (Key::D2,    InputRole::Button1),
+            (Key::D3,    InputRole::Button2),
+            (Key::D4,    InputRole::Button3),
+            (Key::Z,     InputRole::Button4),
+            (Key::X,     InputRole::Button5),
+            (Key::C,     InputRole::Button6),
+            (Key::Space, InputRole::Button7),
+            (Key::Space, InputRole::Button4),
+            (Key::W,     InputRole::Up),
+            (Key::D,     InputRole::Right),
+            (Key::S,     InputRole::Down),
+            (Key::A,     InputRole::Left),
+            (Key::E,     InputRole::Up),
+            (Key::E,     InputRole::Right),
+            (Key::Up,    InputRole::Up),
+            (Key::Right, InputRole::Right),
+            (Key::Down,  InputRole::Down),
+            (Key::Left,  InputRole::Left),
         ];
-        for key_set in key_set_list {
-            if let Some(role_list) = keyboard_map.get_mut(&key_set.0) {
+        for key_set in set_list {
+            if let Some((_, role_list)) = keyboard_map.get_mut(&key_set.0) {
                 role_list.push(key_set.1);
             } else {
-                keyboard_map.insert(key_set.0, vec![key_set.1]);
+                keyboard_map.insert(key_set.0, (false, vec![key_set.1]));
+            }
+        }
+    }
+    let mut button_map: BTreeMap<ControllerButton, (bool, Vec<_>)> = BTreeMap::new();
+    {
+        let set_list = [
+            (ControllerButton {id: 0, button: 0}, InputRole::Left),
+            (ControllerButton {id: 0, button: 1}, InputRole::Down),
+            (ControllerButton {id: 0, button: 2}, InputRole::Right),
+            (ControllerButton {id: 0, button: 3}, InputRole::Up),
+        ];
+        for button_set in set_list {
+            if let Some((_, role_list)) = button_map.get_mut(&button_set.0) {
+                role_list.push(button_set.1);
+            } else {
+                button_map.insert(button_set.0, (false, vec![button_set.1]));
+            }
+        }
+    }
+    let mut hat_map: BTreeMap<ControllerHat, (bool, Vec<_>)> = BTreeMap::new();
+    {
+        let set_list = [
+            (ControllerHat {id: 0, which: 0, state: HatState::Up}, InputRole::Up),
+            (ControllerHat {id: 0, which: 0, state: HatState::Right}, InputRole::Right),
+            (ControllerHat {id: 0, which: 0, state: HatState::Down}, InputRole::Down),
+            (ControllerHat {id: 0, which: 0, state: HatState::Left}, InputRole::Left),
+            (ControllerHat {id: 0, which: 0, state: HatState::RightUp}, InputRole::Right),
+            (ControllerHat {id: 0, which: 0, state: HatState::RightUp}, InputRole::Up),
+            (ControllerHat {id: 0, which: 0, state: HatState::RightDown}, InputRole::Right),
+            (ControllerHat {id: 0, which: 0, state: HatState::RightDown}, InputRole::Down),
+            (ControllerHat {id: 0, which: 0, state: HatState::LeftUp}, InputRole::Left),
+            (ControllerHat {id: 0, which: 0, state: HatState::LeftUp}, InputRole::Up),
+            (ControllerHat {id: 0, which: 0, state: HatState::LeftDown}, InputRole::Left),
+            (ControllerHat {id: 0, which: 0, state: HatState::LeftDown}, InputRole::Down),
+        ];
+        for hat_set in set_list {
+            if let Some((_, role_list)) = hat_map.get_mut(&hat_set.0) {
+                role_list.push(hat_set.1);
+            } else {
+                hat_map.insert(hat_set.0, (false, vec![hat_set.1]));
             }
         }
     }
@@ -123,27 +165,72 @@ fn main() {
     }
     spr.sp(0).pos(obj_pos).code(0).palette(1).visible(true);
 
+    let mut controller_axis_args: Vec<piston_window::ControllerAxisArgs> = Vec::new();
+    let mut s0_pos = 0.0;
+    let mut s1_pos = 0.0;
+    let mut s2_pos = 0.0;
+    let mut s3_pos = 0.0;
+
     input_role_state.clear_all();
     'main_loop: loop {
         bg.0.set_cur_pos(0, 0).put_string(&format!("{}", t_count), None);
-        if input_role_state.get(InputRole::Up2).0 {
+        if input_role_state.get(InputRole::Up).0 {
             obj_pos.y -= 1;
         }
-        if input_role_state.get(InputRole::Down2).0 {
+        if input_role_state.get(InputRole::Down).0 {
             obj_pos.y += 1;
         }
-        if input_role_state.get(InputRole::Left2).0 {
+        if input_role_state.get(InputRole::Left).0 {
             obj_pos.x -= 1;
         }
-        if input_role_state.get(InputRole::Right2).0 {
+        if input_role_state.get(InputRole::Right).0 {
             obj_pos.x += 1;
         }
         bg.0.set_cur_pos(0, 1).put_string(&format!("({:3},{:3})", obj_pos.x, obj_pos.y), Some(&CharAttributes::new(3, BgSymmetry::Normal)));
         spr.sp(0).pos(obj_pos);
         bg.1.set_view_pos(obj_pos.x, obj_pos.y);
-        if wait_and_update::doing(&mut game_window, &mut spr, &mut bg, &keyboard_map, &mut input_role_state) {
+
+        bg.0.set_cur_pos(0, 2).put_string(&format!("{}  ", controller_axis_args.len()), None);
+        for args in controller_axis_args.iter() {
+            match args.axis {
+                0 => s0_pos = args.position,
+                1 => s1_pos = args.position,
+                2 => s2_pos = args.position,
+                3 => s3_pos = args.position,
+                _ => {}
+            }
+        }
+        bg.0.set_cur_pos(0, 3).put_string(&format!("{}                                        ", s0_pos), None);
+        bg.0.set_cur_pos(0, 4).put_string(&format!("{}                                        ", s1_pos), None);
+        bg.0.set_cur_pos(0, 5).put_string(&format!("{}                                        ", s2_pos), None);
+        bg.0.set_cur_pos(0, 6).put_string(&format!("{}                                        ", s3_pos), None);
+
+        if wait_and_update::doing(&mut game_window, &mut spr, &mut bg, &mut keyboard_map, &mut button_map, &mut hat_map, &mut controller_axis_args) {
             break 'main_loop;
         }
+        input_role_state.clear_state();
+        for (_, (state, list)) in keyboard_map.iter() {
+            if *state {
+                for r in list {
+                    input_role_state.set_true(*r);
+                }
+            }
+        }
+        for (_, (state, list)) in button_map.iter() {
+            if *state {
+                for r in list {
+                    input_role_state.set_true(*r);
+                }
+            }
+        }
+        for (_, (state, list)) in hat_map.iter() {
+            if *state {
+                for r in list {
+                    input_role_state.set_true(*r);
+                }
+            }
+        }
+        input_role_state.update_history();
         t_count += 1;
     }
     sdl_context.mouse().show_cursor(true);

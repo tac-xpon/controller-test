@@ -1,4 +1,5 @@
 #[derive(PartialEq, PartialOrd, Eq, Ord, Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub enum InputRole {
     Button0 = 0,
     Button1,
@@ -8,6 +9,10 @@ pub enum InputRole {
     Button5,
     Button6,
     Button7,
+    Button8,
+    Button9,
+    Button10,
+    Button11,
     Up,
     Right,
     Down,
@@ -32,10 +37,21 @@ pub struct InputRoleState {
 
 #[allow(dead_code)]
 impl InputRoleState {
-    #[inline]
     pub fn clear_all(&mut self) {
         for s_and_h in &mut self.state_and_history {
             *s_and_h = (false, 0);
+        }
+    }
+
+    pub fn clear_state(&mut self) {
+        for s_and_h in &mut self.state_and_history {
+            s_and_h.0 = false;
+        }
+    }
+
+    pub fn clear_history(&mut self) {
+        for s_and_h in &mut self.state_and_history {
+            s_and_h.1 = 0;
         }
     }
 
@@ -45,7 +61,6 @@ impl InputRoleState {
         }
     }
 
-    #[inline]
     pub fn get(&self, input_role: InputRole) -> (bool, u32) {
         if input_role != InputRole::Whole {
             self.state_and_history[input_role as usize]
@@ -59,17 +74,14 @@ impl InputRoleState {
         }
     }
 
-    #[inline]
     pub fn set(&mut self, input_role: InputRole, state: bool) {
         self.state_and_history[input_role as usize].0 = state;
     }
 
-    #[inline]
     pub fn set_true(&mut self, input_role: InputRole) {
         self.set(input_role, true);
     }
 
-    #[inline]
     pub fn set_false(&mut self, input_role: InputRole) {
         self.set(input_role, false);
     }
