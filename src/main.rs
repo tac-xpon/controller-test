@@ -81,6 +81,7 @@ fn main() {
     let mut hat_map = InputRoleMap::<ControllerHat>::new();
     {
         let set_list = [
+            (ControllerHat {id: 0, which: 0, state: HatState::Centered}, InputRole::None),
             (ControllerHat {id: 0, which: 0, state: HatState::Up}, InputRole::Up),
             (ControllerHat {id: 0, which: 0, state: HatState::Right}, InputRole::Right),
             (ControllerHat {id: 0, which: 0, state: HatState::Down}, InputRole::Down),

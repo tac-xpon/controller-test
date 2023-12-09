@@ -45,21 +45,13 @@ pub fn doing(
             println!("{:?}", input);
             match input.button {
                 Button::Keyboard(k) => {
-                    if let Some((state, _)) = keyboard_map.input_map.get_mut(&k) {
-                        *state = input.state == ButtonState::Press;
-                    }
+                    keyboard_map.update_state(k, input.state == ButtonState::Press);
                 }
                 Button::Controller(b) => {
-                    if let Some((state, _)) = button_map.input_map.get_mut(&b) {
-                        *state = input.state == ButtonState::Press;
-                    }
+                    button_map.update_state_exclusive(b, input.state == ButtonState::Press);
                 }
                 Button::Hat(h) => {
-                    for (m, (state, _)) in hat_map.input_map.iter_mut() {
-                        if m.id == h.id && m.which == h.which {
-                            *state = m.state == h.state;
-                        }
-                    }
+                    hat_map.update_state_exclusive(h, true);
                 }
                 _ => {}
             }

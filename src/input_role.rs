@@ -21,6 +21,7 @@ pub enum InputRole {
     Right2,
     Down2,
     Left2,
+    None,
     _EndOfVariants
 }
 
@@ -32,13 +33,16 @@ impl InputRole {
 
 use std::collections::BTreeMap;
 pub struct InputRoleMap<T> {
-    pub input_map: BTreeMap<T, (bool, Vec<InputRole>)>,
+    input_map: BTreeMap<T, (bool, Vec<InputRole>)>,
+    last_input: Option<T>,
 }
 
+#[allow(dead_code)]
 impl<T: Ord + Copy> InputRoleMap<T> {
     pub fn new() -> Self {
         Self {
-            input_map: BTreeMap::new()
+            input_map: BTreeMap::new(),
+            last_input: None,
         }
     }
 
@@ -49,6 +53,40 @@ impl<T: Ord + Copy> InputRoleMap<T> {
             } else {
                 self.input_map.insert(key_set.0, (false, vec![key_set.1]));
             }
+        }
+    }
+
+    pub fn clear_state(&mut self) {
+        for (_, (state, _)) in self.input_map.iter_mut() {
+            *state = false;
+        }
+        self.last_input = None;
+    }
+
+    pub fn update_state(&mut self, k: T, s: bool) {
+        if let Some((state, _)) = self.input_map.get_mut(&k) {
+            *state = s;
+        }
+    }
+
+    pub fn update_state_exclusive(&mut self, k: T, s: bool) {
+        if let Some((state, _)) = self.input_map.get_mut(&k) {
+            *state = s;
+            self.last_input = if s {
+                if let Some(last_k) = self.last_input {
+                    if last_k != k {
+                        let last = self.input_map.get_mut(&last_k).unwrap();
+                        last.0 = false;
+                    }
+                }
+                Some(k)
+            } else {
+                if self.last_input == Some(k) {
+                    None
+                } else {
+                    self.last_input
+                }
+            };
         }
     }
 }
