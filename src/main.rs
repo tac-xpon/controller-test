@@ -68,6 +68,7 @@ fn main() {
         ];
         keyboard_map.assign(&set_list);
     }
+
     let mut button_map = InputRoleMap::<ControllerButton>::new();
     {
         let set_list = [
@@ -78,6 +79,7 @@ fn main() {
         ];
         button_map.assign(&set_list);
     }
+
     let mut hat_map = InputRoleMap::<ControllerHat>::new();
     {
         let set_list = [
@@ -97,6 +99,7 @@ fn main() {
         ];
         hat_map.assign(&set_list);
     }
+
     let mut input_role_state = InputRoleState::new();
 
     let mut bg_texture_bank = BgTextureBank::new(
@@ -151,6 +154,8 @@ fn main() {
     let mut s1_pos = 0.0;
     let mut s2_pos = 0.0;
     let mut s3_pos = 0.0;
+    let mut s4_pos = 0.0;
+    let mut s5_pos = 0.0;
 
     input_role_state.clear_all();
     'main_loop: loop {
@@ -178,13 +183,17 @@ fn main() {
                 1 => s1_pos = args.position,
                 2 => s2_pos = args.position,
                 3 => s3_pos = args.position,
+                4 => s4_pos = args.position,
+                5 => s5_pos = args.position,
                 _ => {}
             }
         }
-        bg.0.set_cur_pos(0, 3).put_string(&format!("{}                                        ", s0_pos), None);
-        bg.0.set_cur_pos(0, 4).put_string(&format!("{}                                        ", s1_pos), None);
-        bg.0.set_cur_pos(0, 5).put_string(&format!("{}                                        ", s2_pos), None);
-        bg.0.set_cur_pos(0, 6).put_string(&format!("{}                                        ", s3_pos), None);
+        bg.0.set_cur_pos(0, 3).put_string(&format!("0:{}                                        ", s0_pos), None);
+        bg.0.set_cur_pos(0, 4).put_string(&format!("1:{}                                        ", s1_pos), None);
+        bg.0.set_cur_pos(0, 5).put_string(&format!("2:{}                                        ", s2_pos), None);
+        bg.0.set_cur_pos(0, 6).put_string(&format!("3:{}                                        ", s3_pos), None);
+        bg.0.set_cur_pos(0, 7).put_string(&format!("4:{}                                        ", s4_pos), None);
+        bg.0.set_cur_pos(0, 8).put_string(&format!("5:{}                                        ", s5_pos), None);
 
         if wait_and_update::doing(&mut game_window, &mut spr, &mut bg, &mut keyboard_map, &mut button_map, &mut hat_map, &mut controller_axis_args) {
             break 'main_loop;
